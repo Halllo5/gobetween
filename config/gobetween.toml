@@ -15,6 +15,14 @@ output = "stdout" # "stdout" | "stderr" | "/path/to/gobetween.log"
 format = "text"   # (optional) "text" | "json"
 
 #
+# Geoip Configuration
+#
+[geoip]
+enabled = true
+location = "geoip.mmdb"
+
+
+#
 # Pprof profiler configuration
 #
 [profiler]
@@ -25,9 +33,9 @@ bind = ":6060"  # "host:port"
 # REST API server configuration
 #
 [api]
-enabled = true  # true | false
-bind = ":8888"  # "host:port"
-cors = false    # cross-origin resource sharing
+enabled = true # true | false
+bind = ":8888" # "host:port"
+cors = false   # cross-origin resource sharing
 
 #  [api.basic_auth]   # (optional) Enable HTTP Basic Auth
 #  login = "admin"    # HTTP Auth Login
@@ -79,13 +87,13 @@ backend_connection_timeout = "0" # Backend connection timeout (ignored in udp)
 protocol = "tcp"
 bind = "0.0.0.0:3000"
 
-  [servers.sample.discovery]
-  kind = "static"
-  static_list = [
-      "localhost:8000 weight=40 priority=1",
-      "localhost:8001 weight=60 priority=1",
-      "localhost:8002 weight=100 priority=0"
-  ]
+[servers.sample.discovery]
+kind = "static"
+static_list = [
+  "localhost:8000 weight=40 priority=1",
+  "localhost:8001 weight=60 priority=1",
+  "localhost:8002 weight=100 priority=0",
+]
 
 # ---------- udp example ----------- #
 
@@ -93,16 +101,12 @@ bind = "0.0.0.0:3000"
 bind = "localhost:4000"
 protocol = "udp"
 
-  [servers.udpsample.udp]
-  max_responses = 1
+[servers.udpsample.udp]
+max_responses = 1
 
-  [servers.udpsample.discovery]
-  kind = "static"
-  static_list = [
-      "8.8.8.8:53",
-      "8.8.4.4:53",
-      "91.239.100.100:53"
-  ]
+[servers.udpsample.discovery]
+kind = "static"
+static_list = ["8.8.8.8:53", "8.8.4.4:53", "91.239.100.100:53"]
 
 #
 # -------------------- example ----------------------------- #
@@ -176,13 +180,14 @@ protocol = "udp"
 #
 ## -------------------- access management -------------------- #
 #
-#  [servers.default.access]  # (optional)
-#  default = "allow"         # (required) default access order
-#  rules = [                 # (required) list of access rules in
-#    "deny 127.0.0.1",       #   the following format: <deny|allow> <ip|network>
-#    "deny 192.168.0.1",     #   are checked in sequence until match,
-#    "allow 192.168.0.1/24"  #   if no match, use 'default' order. ipv4 and ipv6 are supported
-#  ]
+[servers.sample.access] # (optional)
+default = "allow" # (required) default access order
+rules = [ # (required) list of access rules in
+  # "deny 127.0.0.1",       #   the following format: <deny|allow> <ip|network>
+  # "deny 192.168.0.1",     #   are checked in sequence until match,
+  "allow 192.168.0.1/24", #   if no match, use 'default' order. ipv4 and ipv6 are supported
+  "deny CH",
+]
 #
 ## -------------------- proxy protocol properties -------------------- #
 #

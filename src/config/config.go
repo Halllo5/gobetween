@@ -18,6 +18,12 @@ type Config struct {
 	Acme     *AcmeConfig       `toml:"acme" json:"acme"`
 	Profiler *ProfilerConfig   `toml:"profiler" json:"profiler"`
 	Servers  map[string]Server `toml:"servers" json:"servers"`
+	GeoIP    GeoIPConfig       `toml:"geoip" json:"geoip"`
+}
+
+type GeoIPConfig struct {
+	Enabled  bool   `toml:"enabled" json:"enabled"`
+	Location string `toml:"location" json:"location"`
 }
 
 /**

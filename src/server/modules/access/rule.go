@@ -10,6 +10,9 @@ import (
 	"errors"
 	"net"
 	"strings"
+
+	country "github.com/mikekonan/go-countries"
+	"github.com/yyyar/gobetween/geoip"
 )
 
 /**
@@ -19,15 +22,16 @@ import (
 type AccessRule struct {
 	Allow     bool
 	IsNetwork bool
+	IsGeoIP   bool
 	Ip        *net.IP
 	Network   *net.IPNet
+	Country   *string
 }
 
 /**
  * Parses string to AccessRule
  */
 func ParseAccessRule(rule string) (*AccessRule, error) {
-
 	parts := strings.Split(rule, " ")
 	if len(parts) != 2 {
 		return nil, errors.New("Bad access rule format: " + rule)
@@ -49,6 +53,8 @@ func ParseAccessRule(rule string) (*AccessRule, error) {
 			Ip:        &ipShould,
 			IsNetwork: false,
 			Network:   nil,
+			IsGeoIP:   false,
+			Country:   nil,
 		}, nil
 	}
 
@@ -59,18 +65,33 @@ func ParseAccessRule(rule string) (*AccessRule, error) {
 			Ip:        nil,
 			IsNetwork: true,
 			Network:   ipNetShould,
+			IsGeoIP:   false,
+			Country:   nil,
+		}, nil
+	}
+
+	_, ok := country.ByAlpha2CodeStr(cidrOrIp)
+	if ok {
+		return &AccessRule{
+			Allow:     r == "allow",
+			Ip:        nil,
+			IsNetwork: false,
+			Network:   nil,
+			IsGeoIP:   true,
+			Country:   &cidrOrIp,
 		}, nil
 	}
 
 	return nil, errors.New("Cant parse acces rule target, not an ip or cidr: " + cidrOrIp)
-
 }
 
 /**
  * Checks if ip matches access rule
  */
 func (this *AccessRule) Matches(ip *net.IP) bool {
-
+	if this.IsGeoIP {
+		return geoip.Lookup(ip) == *this.Country
+	}
 	switch this.IsNetwork {
 	case true:
 		return this.Network.Contains(*ip)

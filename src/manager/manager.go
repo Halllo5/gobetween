@@ -17,6 +17,7 @@ import (
 
 	"github.com/yyyar/gobetween/config"
 	"github.com/yyyar/gobetween/core"
+	"github.com/yyyar/gobetween/geoip"
 	"github.com/yyyar/gobetween/logging"
 	"github.com/yyyar/gobetween/server"
 	"github.com/yyyar/gobetween/service"
@@ -43,7 +44,6 @@ var originalCfg config.Config
  * Initialize manager from the initial/default configuration
  */
 func Initialize(cfg config.Config) {
-
 	log := logging.For("manager")
 	log.Info("Initializing...")
 
@@ -53,12 +53,14 @@ func Initialize(cfg config.Config) {
 	defaults = cfg.Defaults
 	initDefaults()
 
-	//Initialize global sections
+	// Initialize global sections
 	initConfigGlobals(&cfg)
 
-	//create services
+	// create services
 	services = service.All(cfg)
 
+	// Initialize GEOIP
+	log.Info(geoip.Load(cfg))
 	// Go through config and start servers for each server
 	for name, serverCfg := range cfg.Servers {
 		err := Create(name, serverCfg)
@@ -74,7 +76,7 @@ func Initialize(cfg config.Config) {
 }
 
 func initDefaults() {
-	//defaults
+	// defaults
 	if defaults.MaxConnections == nil {
 		defaults.MaxConnections = new(int)
 	}
@@ -96,8 +98,7 @@ func initDefaults() {
 }
 
 func initConfigGlobals(cfg *config.Config) {
-
-	//acme
+	// acme
 	if cfg.Acme != nil {
 		if cfg.Acme.Challenge == "" {
 			cfg.Acme.Challenge = "http"
@@ -130,7 +131,6 @@ func initProfiler(cfg *config.Config) {
  * the config file
  */
 func DumpConfig(format string) (string, error) {
-
 	originalCfg.Servers = map[string]config.Server{}
 
 	servers.RLock()
@@ -166,7 +166,6 @@ func All() map[string]config.Server {
  * Returns server configuration by name
  */
 func Get(name string) interface{} {
-
 	servers.RLock()
 	server, ok := servers.m[name]
 	servers.RUnlock()
@@ -182,7 +181,6 @@ func Get(name string) interface{} {
  * Create new server and launch it
  */
 func Create(name string, cfg config.Server) error {
-
 	servers.Lock()
 	defer servers.Unlock()
 
@@ -196,7 +194,6 @@ func Create(name string, cfg config.Server) error {
 	}
 
 	server, err := server.New(name, c)
-
 	if err != nil {
 		return err
 	}
@@ -221,7 +218,6 @@ func Create(name string, cfg config.Server) error {
  * Delete server stopping all active connections
  */
 func Delete(name string) error {
-
 	servers.Lock()
 	defer servers.Unlock()
 
@@ -244,7 +240,6 @@ func Delete(name string) error {
  * Returns stats for the server
  */
 func Stats(name string) interface{} {
-
 	servers.Lock()
 	server := servers.m[name]
 	servers.Unlock()
@@ -257,7 +252,6 @@ func Stats(name string) interface{} {
  * TODO: make validation better
  */
 func prepareConfig(name string, server config.Server, defaults config.ConnectionOptions) (config.Server, error) {
-
 	/* ----- Prerequisites ----- */
 
 	if server.Bind == "" {
@@ -277,11 +271,7 @@ func prepareConfig(name string, server config.Server, defaults config.Connection
 	}
 
 	switch server.Healthcheck.Kind {
-	case
-		"ping",
-		"probe",
-		"exec",
-		"none":
+	case "ping", "probe", "exec", "none":
 	default:
 		return config.Server{}, errors.New("Not supported healthcheck type " + server.Healthcheck.Kind)
 	}
@@ -395,10 +385,7 @@ func prepareConfig(name string, server config.Server, defaults config.Connection
 		}
 
 		switch server.Sni.UnexpectedHostnameStrategy {
-		case
-			"default",
-			"reject",
-			"any":
+		case "default", "reject", "any":
 		default:
 			return config.Server{}, errors.New("Not supported sni unexprected hostname strategy " + server.Sni.UnexpectedHostnameStrategy)
 		}
@@ -408,9 +395,7 @@ func prepareConfig(name string, server config.Server, defaults config.Connection
 		}
 
 		switch server.Sni.HostnameMatchingStrategy {
-		case
-			"exact",
-			"regexp":
+		case "exact", "regexp":
 		default:
 			return config.Server{}, errors.New("Not supported sni matching " + server.Sni.HostnameMatchingStrategy)
 		}
@@ -433,11 +418,9 @@ func prepareConfig(name string, server config.Server, defaults config.Connection
 	}
 
 	if server.Tls != nil {
-
 		if (len(server.Tls.AcmeHosts) == 0) && ((server.Tls.KeyPath == "") || (server.Tls.CertPath == "")) {
 			return config.Server{}, errors.New("tls requires specify either acme hosts or both key and cert paths")
 		}
-
 	}
 
 	/* ----- Connections params and overrides ----- */
@@ -492,9 +475,7 @@ func prepareConfig(name string, server config.Server, defaults config.Connection
 
 	/* Discovery */
 	switch server.Discovery.Failpolicy {
-	case
-		"keeplast",
-		"setempty":
+	case "keeplast", "setempty":
 	case "":
 		server.Discovery.Failpolicy = "keeplast"
 	default:
@@ -512,9 +493,7 @@ func prepareConfig(name string, server config.Server, defaults config.Connection
 	/* SRV Discovery */
 	if server.Discovery.Kind == "srv" {
 		switch server.Discovery.SrvDnsProtocol {
-		case
-			"udp",
-			"tcp":
+		case "udp", "tcp":
 		case "":
 			server.Discovery.SrvDnsProtocol = "udp"
 		default:
@@ -548,9 +527,7 @@ func prepareConfig(name string, server config.Server, defaults config.Connection
 		}
 
 		switch server.Discovery.LXDContainerAddressType {
-		case
-			"IPv4",
-			"IPv6":
+		case "IPv4", "IPv6":
 		case "":
 			server.Discovery.LXDContainerAddressType = "IPv4"
 		default:
